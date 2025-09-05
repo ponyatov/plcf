@@ -128,6 +128,9 @@ class CppProject(Project):
 class ThisProject(PyProject, CppProject):
     GITI = sorted(list(set(PyProject.GITI + CppProject.GITI)))
 
+
 if __name__ == '__main__':
     ThisProject()
     os.system('git add -A')
+    print(f'git remote add gh git@github.com:ponyatov/{APP}.git')
+    print(f'git remote add flic git@gitflic.ru:dponyatov/{APP}.git')
