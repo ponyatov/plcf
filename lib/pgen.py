@@ -4,7 +4,7 @@ import os
 import datetime as dt
 
 APP = 'plcf'
-TITLE = 'programming language construction framework'
+TITLE = 'Programming Language Construction Framework'
 ABOUT = ''
 
 VERSION = '0.0.1'
@@ -29,7 +29,7 @@ class Project():
 # `{APP}` {VERSION}
 ## {TITLE}
 
-(c) {AUTHOR} <{EMAIL}> {YEAR} {LICENSE}''', file=readme)
+(c) {AUTHOR} <<{EMAIL}>> {YEAR} {LICENSE}''', file=readme)
             if ABOUT:
                 print(ABOUT, file=readme)
 
@@ -39,7 +39,7 @@ class Project():
 *.swp
 *.log''', file=giti)
             for i in self.GITI:
-                 print(i, file=giti)
+                print(i, file=giti)
             print('!.gitignore''', file=giti)
 
     def mkdir(self, name, extra=None):
@@ -61,10 +61,30 @@ class Project():
     JSONS = ['extensions', 'settings', 'tasks', 'launch']
     GITI = []
 
+    def extensions(self):
+        with open('.vscode/extensions.json', 'w') as json:
+            print('{}', file=json)
+
+    def settins(self):
+        with open('.vscode/settins.json', 'w') as json:
+            print('{}', file=json)
+
+    def tasks(self):
+        with open('.vscode/tasks.json', 'w') as json:
+            print('{}', file=json)
+
+    def launch(self):
+        with open('.vscode/launch.json', 'w') as json:
+            print('{}', file=json)
+
     def vscode(self):
         self.mkdir('.vscode')
         for json in self.JSONS:
             JSON(f'.vscode/{json}.json')
+        self.extensions()
+        self.settins()
+        self.tasks()
+        self.launch()
 
     def vsext(self):
         self.mkdir('vscode')
@@ -82,17 +102,32 @@ class Project():
     def __init__(self):
         self.gen()
 
+    def cpp(self):
+        open(f'inc/{APP}.hpp', 'w').close()
+        open(f'src/{APP}.cpp', 'w').close()
+        open(f'src/{APP}.lex', 'w').close()
+        open(f'src/{APP}.yacc', 'w').close()
+
     def gen(self):
         self.README()
         self.dirs()
         self.gitignore()
         self.vscode()
         self.vsext()
+        self.cpp()
 
 
 class PyProject(Project):
     GITI = Project.GITI + ['__pycache__/', '*.pyc']
 
 
+class CppProject(Project):
+    GITI = Project.GITI + ['*.o', '*.obj']
+
+
+class ThisProject(PyProject, CppProject):
+    GITI = sorted(list(set(PyProject.GITI + CppProject.GITI)))
+
 if __name__ == '__main__':
-    PyProject()
+    ThisProject()
+    os.system('git add -A')
