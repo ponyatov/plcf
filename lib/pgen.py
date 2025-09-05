@@ -51,7 +51,10 @@ class Project():
             print('!.gitignore\n', file=giti)
 
     def bin(self): self.mkdir('bin', '*')
-    def doc(self): self.mkdir('doc', 'html/')
+
+    def doc(self):
+        self.mkdir('doc', 'html/')
+
     def lib(self): self.mkdir('lib')
     def inc(self): self.mkdir('inc')
     def src(self): self.mkdir('src')
@@ -123,6 +126,16 @@ class PyProject(Project):
 
 class CppProject(Project):
     GITI = Project.GITI + ['*.o', '*.obj']
+
+    def doxy(self):
+        if not os.path.exists('doc/logo.png'):
+            os.system('cp ~/icons/triangle.png doc/logo.png')
+        if not os.path.exists('doc/DoxygenLayout.xml'):
+            os.system('doxygen -l ; mv DoxygenLayout.xml doc/')
+
+    def doc(self):
+        Project.doc(self)
+        self.doxy()
 
 
 class ThisProject(PyProject, CppProject):
