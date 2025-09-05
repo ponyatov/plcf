@@ -1,3 +1,4 @@
+from codegen import S
 import os
 "generic VSCode project generator"
 
@@ -48,7 +49,7 @@ class Project():
         with open(f'{name}/.gitignore', 'w') as giti:
             if extra is not None:
                 print(extra, file=giti)
-            print('!.gitignore\n', file=giti)
+            print('!.gitignore', file=giti)
 
     def bin(self): self.mkdir('bin', '*')
 
@@ -68,8 +69,8 @@ class Project():
         with open('.vscode/extensions.json', 'w') as json:
             print('{}', file=json)
 
-    def settins(self):
-        with open('.vscode/settins.json', 'w') as json:
+    def settings(self):
+        with open('.vscode/settings.json', 'w') as json:
             print('{}', file=json)
 
     def tasks(self):
@@ -85,7 +86,7 @@ class Project():
         for json in self.JSONS:
             JSON(f'.vscode/{json}.json')
         self.extensions()
-        self.settins()
+        self.settings()
         self.tasks()
         self.launch()
 
@@ -105,11 +106,13 @@ class Project():
     def __init__(self):
         self.gen()
 
-    def cpp(self):
-        open(f'inc/{APP}.hpp', 'w').close()
-        open(f'src/{APP}.cpp', 'w').close()
-        open(f'src/{APP}.lex', 'w').close()
-        open(f'src/{APP}.yacc', 'w').close()
+    def settings(self):
+        with open('.vscode/settings.json', 'w') as json:
+            print('''{
+    // CMake
+    "cmake.sourceDirectory" : "${workspaceFolder}",
+    "cmake.buildDirectory"  : "${workspaceFolder}/tmp/${workspaceFolderBasename}",
+}''', file=json)
 
     def gen(self):
         self.README()
@@ -117,7 +120,6 @@ class Project():
         self.gitignore()
         self.vscode()
         self.vsext()
-        self.cpp()
 
 
 class PyProject(Project):
@@ -136,6 +138,70 @@ class CppProject(Project):
     def doc(self):
         Project.doc(self)
         self.doxy()
+
+    def c_cpp_properties(self):
+        with open('.vscode/c_cpp_properties.json', 'w') as json:
+            print(S('{', '}')
+                  // '"version": 4,'
+                  // (S('"env": {', '},')
+                      // S('"appInclude": [', '],')
+                      // S('"crossInclude": [', ']'))
+                  // (S('"configurations": [', ']')
+                      // (S('{', '}')
+                          // '"name": "linux",'
+                          // '"configurationProvider": "ms-vscode.cmake-tools",'
+                          // '"mergeConfigurations"  :  true,'
+                          // '"includePath"          : ["${appInclude}", "${crossInclude}"],'
+                          // '"defines"              : ["PC", "I5", "X86_64", "LINUX"]'
+                          )),
+                  file=json, end='')
+
+    def vscode(self):
+        Project.vscode(self)
+        self.c_cpp_properties()
+
+    def cpp(self):
+        open(f'inc/{APP}.hpp', 'w').close()
+        open(f'src/{APP}.cpp', 'w').close()
+        open(f'src/{APP}.lex', 'w').close()
+        open(f'src/{APP}.yacc', 'w').close()
+
+    def lists(self):
+        with open(f'CMakeLists.txt', 'w') as txt:
+            print(f'''
+cmake_minimum_required(VERSION 3.22)
+get_filename_component(CMAKE_PROJECT_NAME ${{CMAKE_SOURCE_DIR}} NAME_WE)
+project(${{CMAKE_PROJECT_NAME}} VERSION {VERSION} LANGUAGES C CXX ASM)
+
+file(GLOB S
+    RELATIVE ${{CMAKE_SOURCE_DIR}}
+    src/*.s
+)
+
+file(GLOB C
+    RELATIVE ${{CMAKE_SOURCE_DIR}}
+    src/*.c*
+)
+
+file(GLOB H
+    RELATIVE ${{CMAKE_SOURCE_DIR}}
+    inc/*.h*
+)
+
+add_executable(${{CMAKE_PROJECT_NAME}} ${{C}} ${{H}} ${{S}})
+''', file=txt)
+
+    def presets(self):
+        open(f'CMakePresets.json', 'w').close()
+
+    def cmake(self):
+        self.lists()
+        self.presets()
+
+    def gen(self):
+        Project.gen(self)
+        self.cpp()
+        self.cmake()
 
 
 class ThisProject(PyProject, CppProject):
